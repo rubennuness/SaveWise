@@ -52,7 +52,7 @@ export default function ExpensesScreen() {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={<Text style={{ opacity: 0.6, textAlign: 'center', marginTop: 40 }}>No expenses yet. Tap + to add one.</Text>}
-        contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingBottom: 8 }}
         stickySectionHeadersEnabled
       />
     </View>
@@ -60,23 +60,13 @@ export default function ExpensesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  container: { flex: 1 },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
   },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-  },
-  sectionHeader: {
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(0,0,0,0.08)', marginLeft: 16 },
+  sectionHeader: { paddingTop: 8, paddingBottom: 6, paddingHorizontal: 16 },
   sectionHeaderText: {
     fontWeight: '700',
     opacity: 0.7,
@@ -84,7 +74,8 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   iconWrap: { width: 28, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
   itemDesc: { fontSize: 16, fontWeight: '600' },
