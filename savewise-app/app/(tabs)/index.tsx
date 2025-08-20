@@ -4,13 +4,12 @@ import { useMemo } from 'react';
 import { format, startOfMonth } from 'date-fns';
 import { useExpenses } from '@/store/ExpensesContext';
 import { useBudget } from '@/store/BudgetContext';
-import { useBills } from '@/store/BillsContext';
+// Bills are not used for tips anymore
 import Svg, { G, Path } from 'react-native-svg';
 
 export default function DashboardScreen() {
   const { getMonthlyTotals, getMonthlyByCategory } = useExpenses();
   const { state: budget } = useBudget();
-  const { state: bills } = useBills();
   const monthISO = useMemo(() => startOfMonth(new Date()).toISOString(), []);
   const totals = getMonthlyTotals(monthISO);
   const byCat = getMonthlyByCategory(monthISO);
@@ -35,8 +34,7 @@ export default function DashboardScreen() {
   if (biggest && biggest[1] > totals.spending * 0.35) {
     tips.push(`High spending detected in ${biggest[0]}. Try setting a tighter category budget next month.`);
   }
-  const upcomingBills = bills.bills.slice(0, 3).map(b => `${b.name} (€${b.amount.toFixed(2)})`).join(', ');
-  if (upcomingBills) tips.push(`Upcoming bills: ${upcomingBills}. Keep funds reserved.`);
+  // Skip bill-based tips because recurring bills are fixed and already planned
 
   return (
     <View style={styles.container}>
