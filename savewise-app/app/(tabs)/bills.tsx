@@ -1,7 +1,7 @@
 import { StyleSheet, FlatList, TextInput, Pressable, View as RNView, Platform } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useBills } from '@/store/BillsContext';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { BillFrequency } from '@/types/bill';
 import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -16,8 +16,8 @@ export default function BillsScreen() {
   const [frequency, setFrequency] = useState<BillFrequency>('Monthly');
   const [nextDue, setNextDue] = useState(''); // YYYY-MM-DD
   const [showNextDuePicker, setShowNextDuePicker] = useState(false);
-  const [paidOnById, setPaidOnById] = useState<Record<string, string>>({}); // billId -> YYYY-MM-DD
   const [category, setCategory] = useState<ExpenseCategory>('Utilities');
+  const [editingCategoryBillId, setEditingCategoryBillId] = useState<string | null>(null);
 
   const add = () => {
     const n = parseFloat(amount.replace(',', '.'));
@@ -34,7 +34,7 @@ export default function BillsScreen() {
       <Text style={styles.title}>Recurring Bills</Text>
 
       <RNView style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-        <TextInput style={[styles.input, { flex: 1 }]} value={name} onChangeText={setName} placeholder="Bill name" />
+        <TextInput style={[styles.input, styles.nameInput]} value={name} onChangeText={setName} placeholder="Bill name" />
         <TextInput style={[styles.input, { width: 100 }]} value={amount} onChangeText={setAmount} placeholder="0.00" keyboardType="decimal-pad" />
         <Pressable style={[styles.input, styles.dateBtn]} onPress={() => setShowNextDuePicker(true)}>
           <Text style={{ color: nextDue ? '#111827' : 'rgba(0,0,0,0.4)' }}>{nextDue || 'Pick next due date'}</Text>
@@ -90,20 +90,29 @@ export default function BillsScreen() {
             </RNView>
             <RNView style={{ marginTop: 10 }}>
               <Text style={{ fontWeight: '600', marginBottom: 4 }}>Category</Text>
-              <RNView style={styles.chipsRow}>
-                {(['Groceries','Dining','Transport','Housing','Utilities','Health','Entertainment','Shopping','Education','Travel','Other'] as ExpenseCategory[]).map(c => (
-                  <Pressable key={c} onPress={() => setBillCategory(item.id, c)} style={[styles.chip, (item.category || 'Utilities') === c && styles.chipActive]}>
-                    <Text style={[styles.chipText, (item.category || 'Utilities') === c && styles.chipTextActive]}>{c}</Text>
+              {editingCategoryBillId === item.id ? (
+                <RNView style={styles.chipsRow}>
+                  {(['Groceries','Dining','Transport','Housing','Utilities','Health','Entertainment','Shopping','Education','Travel','Other'] as ExpenseCategory[]).map(c => (
+                    <Pressable key={c} onPress={() => { setBillCategory(item.id, c); setEditingCategoryBillId(null); }} style={[styles.chip, (item.category || 'Utilities') === c && styles.chipActive]}>
+                      <Text style={[styles.chipText, (item.category || 'Utilities') === c && styles.chipTextActive]}>{c}</Text>
+                    </Pressable>
+                  ))}
+                </RNView>
+              ) : (
+                <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <RNView style={[styles.chip, styles.chipActive]}>
+                    <Text style={[styles.chipText, styles.chipTextActive]}>{(item.category as string) || 'Utilities'}</Text>
+                  </RNView>
+                  <Pressable onPress={() => setEditingCategoryBillId(item.id)} style={[styles.actionBtn, { backgroundColor: 'rgba(0,0,0,0.06)' }]}>
+                    <Text>Edit</Text>
                   </Pressable>
-                ))}
-              </RNView>
+                </RNView>
+              )}
             </RNView>
 
             <RNView style={styles.actionsRow}>
-              <PaidDatePicker value={paidOnById[item.id]} onChange={(v) => setPaidOnById(prev => ({ ...prev, [item.id]: v }))} />
               <Pressable onPress={() => {
-                const v = paidOnById[item.id];
-                const iso = v ? new Date(v).toISOString() : undefined;
+                const iso = item.nextDueISO;
                 markPaidAndRoll(item.id, iso);
                 // Log as an actual expense so the dashboard updates in the selected category
                 const whenISO = iso ?? new Date().toISOString();
@@ -135,6 +144,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: 'rgba(0,0,0,0.04)'
   },
+  nameInput: { flexBasis: 220, flexGrow: 1 },
   dateBtn: {
     justifyContent: 'center',
     width: 160,
