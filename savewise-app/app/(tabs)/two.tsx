@@ -1,23 +1,48 @@
-import { StyleSheet, FlatList, Pressable } from 'react-native';
+import { StyleSheet, SectionList, Pressable } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useExpenses } from '@/store/ExpensesContext';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 import { useMemo } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ExpenseCategory } from '@/types/expense';
 
 export default function ExpensesScreen() {
   const { state, removeExpense } = useExpenses();
 
+  const sections = useMemo(() => {
+    const sorted = [...state.expenses].sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime());
+    const today: typeof sorted = [];
+    const yesterday: typeof sorted = [];
+    const earlier: typeof sorted = [];
+    for (const e of sorted) {
+      const d = new Date(e.dateISO);
+      if (isToday(d)) today.push(e);
+      else if (isYesterday(d)) yesterday.push(e);
+      else earlier.push(e);
+    }
+    const s = [] as { title: string; data: typeof sorted }[];
+    if (today.length) s.push({ title: 'Today', data: today });
+    if (yesterday.length) s.push({ title: 'Yesterday', data: yesterday });
+    if (earlier.length) s.push({ title: 'Earlier', data: earlier });
+    return s;
+  }, [state.expenses]);
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={state.expenses}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
+        renderSectionHeader={({ section: { title } }) => (
+          <View style={styles.sectionHeader}><Text style={styles.sectionHeaderText}>{title.toUpperCase()}</Text></View>
+        )}
         renderItem={({ item }) => (
           <View style={styles.item}>
+            <View style={styles.iconWrap}>
+              <MaterialCommunityIcons name={getCategoryIcon(item.category)} size={22} color="#6b7280" />
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.itemTitle}>{item.category}</Text>
               <Text style={styles.itemDesc}>{item.description}</Text>
-              <Text style={styles.itemDate}>{format(new Date(item.dateISO), 'dd MMM yyyy')}</Text>
+              <Text style={styles.itemMeta}>{item.category} • {format(new Date(item.dateISO), 'dd MMM')}</Text>
             </View>
             <Text style={styles.itemAmount}>€{item.amount.toFixed(2)}</Text>
             <Pressable onPress={() => removeExpense(item.id)} style={{ marginLeft: 12 }}>
@@ -27,7 +52,8 @@ export default function ExpensesScreen() {
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={<Text style={{ opacity: 0.6, textAlign: 'center', marginTop: 40 }}>No expenses yet. Tap + to add one.</Text>}
-        contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16 }}
+        stickySectionHeadersEnabled
       />
     </View>
   );
@@ -47,23 +73,22 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
+  sectionHeader: {
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  sectionHeaderText: {
+    fontWeight: '700',
+    opacity: 0.7,
+  },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
   },
-  itemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  itemDesc: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  itemDate: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
+  iconWrap: { width: 28, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  itemDesc: { fontSize: 16, fontWeight: '600' },
+  itemMeta: { fontSize: 12, opacity: 0.7 },
   itemAmount: {
     fontSize: 16,
     fontWeight: '700',
@@ -71,3 +96,33 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 });
+
+function getCategoryIcon(category: ExpenseCategory): keyof typeof MaterialCommunityIcons.glyphMap {
+  switch (category) {
+    case 'Groceries':
+      return 'cart-outline';
+    case 'Dining':
+      return 'food-fork-drink';
+    case 'Transport':
+      return 'car';
+    case 'Housing':
+      return 'home-outline';
+    case 'Utilities':
+      return 'flash';
+    case 'Health':
+      return 'heart-outline';
+    case 'Entertainment':
+      return 'popcorn';
+    case 'Shopping':
+      return 'shopping-outline';
+    case 'Education':
+      return 'school-outline';
+    case 'Travel':
+      return 'airplane';
+    case 'Income':
+      return 'cash-plus';
+    case 'Other':
+    default:
+      return 'dots-horizontal-circle-outline';
+  }
+}
