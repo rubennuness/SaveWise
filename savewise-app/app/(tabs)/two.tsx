@@ -16,9 +16,7 @@ export default function ExpensesScreen() {
           <View style={styles.item}>
             <View style={{ flex: 1 }}>
               <Text style={styles.itemTitle}>{item.category}</Text>
-              {!!item.description && (
-                <Text style={styles.itemDesc}>{item.description}</Text>
-              )}
+              <Text style={styles.itemDesc}>{item.description}</Text>
               <Text style={styles.itemDate}>{format(new Date(item.dateISO), 'dd MMM yyyy')}</Text>
             </View>
             <Text style={styles.itemAmount}>€{item.amount.toFixed(2)}</Text>

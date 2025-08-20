@@ -5,7 +5,7 @@ import { format, startOfMonth } from 'date-fns';
 import { useExpenses } from '@/store/ExpensesContext';
 import { useBudget } from '@/store/BudgetContext';
 import { useBills } from '@/store/BillsContext';
-import Svg, { G, Circle } from 'react-native-svg';
+import Svg, { G, Path } from 'react-native-svg';
 
 export default function DashboardScreen() {
   const { getMonthlyTotals, getMonthlyByCategory } = useExpenses();
@@ -59,7 +59,7 @@ export default function DashboardScreen() {
       <Text style={[styles.subtitle, { marginTop: 24 }]}>Spending Breakdown</Text>
       <RNView style={{ alignItems: 'center', marginTop: 8 }}>
         {totalSpending > 0 ? (
-          <DonutChart data={donutData} size={220} strokeWidth={26} colors={donutColors} />
+          <PieChart data={donutData} size={220} colors={donutColors} />
         ) : (
           <Text style={{ opacity: 0.6 }}>No expenses yet. Tap + to add one.</Text>
         )}
@@ -93,32 +93,30 @@ export default function DashboardScreen() {
 
 type DonutDatum = [string, number];
 
-function DonutChart({ data, size, strokeWidth, colors }: { data: DonutDatum[]; size: number; strokeWidth: number; colors: string[] }) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
+function PieChart({ data, size, colors }: { data: DonutDatum[]; size: number; colors: string[] }) {
   const total = data.reduce((sum, [, v]) => sum + v, 0);
-  let offset = 0;
+  const center = size / 2;
+  const radius = size / 2;
+  let startAngle = -90;
+
+  const toRadians = (deg: number) => (deg * Math.PI) / 180;
+  const point = (deg: number) => {
+    const a = toRadians(deg);
+    return { x: center + radius * Math.cos(a), y: center + radius * Math.sin(a) };
+  };
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
-        {data.map(([label, value], index) => {
-          const segment = total === 0 ? 0 : (value / total) * circumference;
-          const circle = (
-            <Circle
-              key={label}
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              stroke={colors[index % colors.length]}
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${segment} ${circumference - segment}`}
-              strokeDashoffset={-offset}
-              fill="transparent"
-            />
-          );
-          offset += segment;
-          return circle;
+      <G>
+        {data.map(([label, value], idx) => {
+          const slice = total === 0 ? 0 : (value / total) * 360;
+          const endAngle = startAngle + slice;
+          const largeArc = slice > 180 ? 1 : 0;
+          const s = point(startAngle);
+          const e = point(endAngle);
+          const d = `M ${center} ${center} L ${s.x} ${s.y} A ${radius} ${radius} 0 ${largeArc} 1 ${e.x} ${e.y} Z`;
+          startAngle = endAngle;
+          return <Path key={label} d={d} fill={colors[idx % colors.length]} />;
         })}
       </G>
     </Svg>

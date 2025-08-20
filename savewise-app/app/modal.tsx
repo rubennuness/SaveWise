@@ -27,11 +27,13 @@ export default function ModalScreen() {
   const [category, setCategory] = useState<ExpenseCategory>('Groceries');
   const isIncome = category === 'Income';
   const [description, setDescription] = useState('');
+  const [descriptionError, setDescriptionError] = useState(false);
 
   const save = () => {
     const numeric = parseFloat(amount.replace(',', '.'));
     if (isNaN(numeric) || numeric <= 0) return;
-    addExpense({ amount: numeric, category, description: description || undefined, dateISO: new Date().toISOString() });
+    if (!description.trim()) { setDescriptionError(true); return; } // description mandatory
+    addExpense({ amount: numeric, category, description: description.trim(), dateISO: new Date().toISOString() });
     router.back();
   };
 
@@ -57,13 +59,16 @@ export default function ModalScreen() {
         ))}
       </View>
 
-      <Text style={styles.label}>{isIncome ? 'Source' : 'Description'}</Text>
+      <Text style={styles.label}>{isIncome ? 'Source (required)' : 'Description (required)'}</Text>
       <TextInput
-        style={[styles.input, { height: 44 }]}
+        style={[styles.input, { height: 44 }, descriptionError && styles.inputError]}
         value={description}
-        onChangeText={setDescription}
-        placeholder="Optional"
+        onChangeText={(t) => { setDescription(t); if (t.trim()) setDescriptionError(false); }}
+        placeholder={isIncome ? 'e.g. Salary' : 'What was this for?'}
       />
+      {descriptionError && (
+        <Text style={styles.errorText}>Description is required</Text>
+      )}
 
       <View style={{ height: 12 }} />
       <Pressable onPress={save} style={styles.primaryBtn}>
@@ -94,6 +99,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     backgroundColor: 'rgba(0,0,0,0.04)'
+  },
+  inputError: {
+    borderColor: '#ef4444',
+    borderWidth: 1,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 4,
   },
   chipsRow: {
     flexDirection: 'row',
