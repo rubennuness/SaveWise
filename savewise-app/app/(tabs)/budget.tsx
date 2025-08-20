@@ -42,20 +42,22 @@ export default function BudgetScreen() {
           const actual = actualByCat[c] ?? 0;
           const remaining = planned - actual;
           return (
-            <RNView style={styles.row}>
-              <Text style={{ flex: 1 }}>{c}</Text>
-              <TextInput
-                style={[styles.input, { width: 100 }]}
-                value={planned ? String(planned) : ''}
-                onChangeText={(v) => {
-                  const n = parseFloat(v.replace(',', '.'));
-                  setCategoryBudget(c, isNaN(n) ? 0 : n);
-                }}
-                placeholder="0"
-                keyboardType="decimal-pad"
-              />
-              <Text style={{ width: 120, textAlign: 'right' }}>Spent: €{actual.toFixed(2)}</Text>
-              <Text style={{ width: 120, textAlign: 'right', color: remaining >= 0 ? '#22c55e' : '#ef4444' }}>Left: €{remaining.toFixed(2)}</Text>
+            <RNView style={styles.cardRow}>
+              <Text style={styles.catName}>{c}</Text>
+              <RNView style={styles.inlineInputs}>
+                <TextInput
+                  style={[styles.input, { width: 100 }]}
+                  value={planned ? String(planned) : ''}
+                  onChangeText={(v) => {
+                    const n = parseFloat(v.replace(',', '.'));
+                    setCategoryBudget(c, isNaN(n) ? 0 : n);
+                  }}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                />
+                <Text style={styles.metaText}>Spent: €{actual.toFixed(2)}</Text>
+                <Text style={[styles.metaText, { color: remaining >= 0 ? '#22c55e' : '#ef4444' }]}>Left: €{remaining.toFixed(2)}</Text>
+              </RNView>
             </RNView>
           );
         }}
@@ -78,7 +80,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: 'rgba(0,0,0,0.04)'
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardRow: { borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(0,0,0,0.08)', backgroundColor: 'rgba(0,0,0,0.02)', padding: 10 },
+  catName: { fontWeight: '600', marginBottom: 8 },
+  inlineInputs: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  metaText: { width: 120, textAlign: 'right' },
 });
 
 

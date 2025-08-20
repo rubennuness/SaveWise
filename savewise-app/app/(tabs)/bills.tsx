@@ -35,18 +35,22 @@ export default function BillsScreen() {
         data={state.bills}
         keyExtractor={(b) => b.id}
         renderItem={({ item }) => (
-          <RNView style={styles.billRow}>
-            <RNView style={{ flex: 1 }}>
-              <Text style={{ fontWeight: '600' }}>{item.name}</Text>
-              <Text style={{ opacity: 0.7, fontSize: 12 }}>{item.frequency} • Due {format(new Date(item.nextDueISO), 'dd MMM yyyy')}</Text>
+          <RNView style={styles.billCard}>
+            <RNView style={styles.billHeader}>
+              <RNView style={{ flex: 1 }}>
+                <Text style={styles.billName}>{item.name}</Text>
+                <Text style={styles.billMeta}>{item.frequency} • Due {format(new Date(item.nextDueISO), 'dd MMM yyyy')}</Text>
+              </RNView>
+              <Text style={styles.billAmount}>€{item.amount.toFixed(2)}</Text>
             </RNView>
-            <Text style={{ fontWeight: '700' }}>€{item.amount.toFixed(2)}</Text>
-            <Pressable onPress={() => markPaidAndRoll(item.id)} style={[styles.smallBtn, { backgroundColor: '#111827' }]}>
-              <Text style={{ color: 'white' }}>Paid</Text>
-            </Pressable>
-            <Pressable onPress={() => removeBill(item.id)} style={[styles.smallBtn, { backgroundColor: '#ef4444' }]}>
-              <Text style={{ color: 'white' }}>Delete</Text>
-            </Pressable>
+            <RNView style={styles.actionsRow}>
+              <Pressable onPress={() => markPaidAndRoll(item.id)} style={[styles.actionBtn, { backgroundColor: '#111827' }]}>
+                <Text style={styles.actionBtnText}>Paid</Text>
+              </Pressable>
+              <Pressable onPress={() => removeBill(item.id)} style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}>
+                <Text style={styles.actionBtnText}>Delete</Text>
+              </Pressable>
+            </RNView>
           </RNView>
         )}
         ItemSeparatorComponent={() => <RNView style={{ height: 8 }} />}
@@ -75,8 +79,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#111827',
   },
   addBtnText: { color: 'white', fontWeight: '600' },
-  billRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  smallBtn: { marginLeft: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
+  billCard: { padding: 12, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(0,0,0,0.08)', backgroundColor: 'rgba(0,0,0,0.02)' },
+  billHeader: { flexDirection: 'row', alignItems: 'center' },
+  billName: { fontWeight: '600', fontSize: 15 },
+  billMeta: { opacity: 0.7, fontSize: 12 },
+  billAmount: { fontWeight: '700', marginLeft: 12 },
+  actionsRow: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', marginTop: 10 },
+  actionBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  actionBtnText: { color: 'white', fontWeight: '600' },
 });
 
 
