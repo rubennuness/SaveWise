@@ -7,7 +7,7 @@ type BillsContextValue = {
   state: BillsState;
   addBill: (bill: Omit<Bill, 'id'>) => void;
   removeBill: (id: string) => void;
-  markPaidAndRoll: (id: string) => void; // advance nextDueISO by frequency
+  markPaidAndRoll: (id: string, paidOnISO?: string) => void; // advance nextDueISO by frequency from paid date
   clearAll: () => void;
 };
 
@@ -42,11 +42,11 @@ export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setState(prev => ({ bills: prev.bills.filter(b => b.id !== id) }));
   }, []);
 
-  const markPaidAndRoll = useCallback((id: string) => {
+  const markPaidAndRoll = useCallback((id: string, paidOnISO?: string) => {
     setState(prev => ({
       bills: prev.bills.map(b => {
         if (b.id !== id) return b;
-        const current = parseISO(b.nextDueISO);
+        const current = paidOnISO ? parseISO(paidOnISO) : parseISO(b.nextDueISO);
         let next: Date = current;
         switch (b.frequency) {
           case 'Weekly':

@@ -1,7 +1,7 @@
 import { StyleSheet, FlatList, TextInput, Pressable, View as RNView } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useBills } from '@/store/BillsContext';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BillFrequency } from '@/types/bill';
 import { format } from 'date-fns';
 
@@ -10,6 +10,7 @@ export default function BillsScreen() {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState<BillFrequency>('Monthly');
+  const [paidOnById, setPaidOnById] = useState<Record<string, string>>({}); // billId -> YYYY-MM-DD
 
   const add = () => {
     const n = parseFloat(amount.replace(',', '.'));
@@ -24,7 +25,7 @@ export default function BillsScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Recurring Bills</Text>
 
-      <RNView style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+      <RNView style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
         <TextInput style={[styles.input, { flex: 1 }]} value={name} onChangeText={setName} placeholder="Bill name" />
         <TextInput style={[styles.input, { width: 100 }]} value={amount} onChangeText={setAmount} placeholder="0.00" keyboardType="decimal-pad" />
         <Pressable style={styles.addBtn} onPress={add}><Text style={styles.addBtnText}>Add</Text></Pressable>
@@ -44,7 +45,17 @@ export default function BillsScreen() {
               <Text style={styles.billAmount}>€{item.amount.toFixed(2)}</Text>
             </RNView>
             <RNView style={styles.actionsRow}>
-              <Pressable onPress={() => markPaidAndRoll(item.id)} style={[styles.actionBtn, { backgroundColor: '#111827' }]}>
+              <TextInput
+                style={[styles.input, { flex: 1, minWidth: 140 }]}
+                value={paidOnById[item.id] ?? ''}
+                onChangeText={(v) => setPaidOnById(prev => ({ ...prev, [item.id]: v }))}
+                placeholder="Paid on YYYY-MM-DD"
+              />
+              <Pressable onPress={() => {
+                const v = paidOnById[item.id];
+                const iso = v ? new Date(v).toISOString() : undefined;
+                markPaidAndRoll(item.id, iso);
+              }} style={[styles.actionBtn, { backgroundColor: '#111827' }]}>
                 <Text style={styles.actionBtnText}>Paid</Text>
               </Pressable>
               <Pressable onPress={() => removeBill(item.id)} style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}>

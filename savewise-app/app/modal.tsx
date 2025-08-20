@@ -25,6 +25,7 @@ export default function ModalScreen() {
   const router = useRouter();
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('Groceries');
+  const isIncome = category === 'Income';
   const [description, setDescription] = useState('');
 
   const save = () => {
@@ -56,7 +57,7 @@ export default function ModalScreen() {
         ))}
       </View>
 
-      <Text style={styles.label}>Description</Text>
+      <Text style={styles.label}>{isIncome ? 'Source' : 'Description'}</Text>
       <TextInput
         style={[styles.input, { height: 44 }]}
         value={description}

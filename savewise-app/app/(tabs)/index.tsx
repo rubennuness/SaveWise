@@ -1,10 +1,11 @@
-import { StyleSheet, FlatList } from 'react-native';
+import { StyleSheet, View as RNView } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useMemo } from 'react';
 import { format, startOfMonth } from 'date-fns';
 import { useExpenses } from '@/store/ExpensesContext';
 import { useBudget } from '@/store/BudgetContext';
 import { useBills } from '@/store/BillsContext';
+import Svg, { G, Circle } from 'react-native-svg';
 
 export default function DashboardScreen() {
   const { getMonthlyTotals, getMonthlyByCategory } = useExpenses();
@@ -18,6 +19,9 @@ export default function DashboardScreen() {
     () => Object.entries(byCat).sort((a, b) => b[1] - a[1]),
     [byCat]
   );
+  const totalSpending = useMemo(() => categories.reduce((sum, [, v]) => sum + v, 0), [categories]);
+  const donutData = categories.slice(0, 6);
+  const donutColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
   // simple saving tips based on budget vs actuals and upcoming bills
   const tips: string[] = [];
@@ -52,18 +56,28 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      <Text style={[styles.subtitle, { marginTop: 24 }]}>Top Categories</Text>
-      <FlatList
-        data={categories}
-        keyExtractor={(item) => item[0]}
-        renderItem={({ item }) => (
-          <View style={styles.listItem}>
-            <Text style={styles.listLabel}>{item[0]}</Text>
-            <Text style={styles.listValue}>€{item[1].toFixed(2)}</Text>
-          </View>
+      <Text style={[styles.subtitle, { marginTop: 24 }]}>Spending Breakdown</Text>
+      <RNView style={{ alignItems: 'center', marginTop: 8 }}>
+        {totalSpending > 0 ? (
+          <DonutChart data={donutData} size={220} strokeWidth={26} colors={donutColors} />
+        ) : (
+          <Text style={{ opacity: 0.6 }}>No expenses yet. Tap + to add one.</Text>
         )}
-        ListEmptyComponent={<Text style={{ opacity: 0.6 }}>No expenses yet. Tap + to add one.</Text>}
-      />
+      </RNView>
+      {totalSpending > 0 && (
+        <RNView style={{ width: '100%', marginTop: 12 }}>
+          {donutData.map(([label, value], idx) => {
+            const pct = totalSpending === 0 ? 0 : (value / totalSpending) * 100;
+            return (
+              <RNView key={label} style={styles.legendRow}>
+                <RNView style={[styles.legendSwatch, { backgroundColor: donutColors[idx % donutColors.length] }]} />
+                <Text style={{ flex: 1 }}>{label}</Text>
+                <Text style={styles.legendValue}>€{value.toFixed(2)} ({pct.toFixed(0)}%)</Text>
+              </RNView>
+            );
+          })}
+        </RNView>
+      )}
 
       {!!tips.length && (
         <>
@@ -74,6 +88,40 @@ export default function DashboardScreen() {
         </>
       )}
     </View>
+  );
+}
+
+type DonutDatum = [string, number];
+
+function DonutChart({ data, size, strokeWidth, colors }: { data: DonutDatum[]; size: number; strokeWidth: number; colors: string[] }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const total = data.reduce((sum, [, v]) => sum + v, 0);
+  let offset = 0;
+
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
+        {data.map(([label, value], index) => {
+          const segment = total === 0 ? 0 : (value / total) * circumference;
+          const circle = (
+            <Circle
+              key={label}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              stroke={colors[index % colors.length]}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${segment} ${circumference - segment}`}
+              strokeDashoffset={-offset}
+              fill="transparent"
+            />
+          );
+          offset += segment;
+          return circle;
+        })}
+      </G>
+    </Svg>
   );
 }
 
@@ -111,18 +159,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  listItem: {
+  legendRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
+    alignItems: 'center',
+    paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: 'rgba(0,0,0,0.08)',
   },
-  listLabel: {
-    fontSize: 14,
+  legendSwatch: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    marginRight: 8,
   },
-  listValue: {
-    fontSize: 14,
+  legendValue: {
     fontWeight: '600',
   },
 });
