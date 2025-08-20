@@ -88,17 +88,18 @@ export default function BillsScreen() {
               </RNView>
               <Text style={styles.billAmount}>€{item.amount.toFixed(2)}</Text>
             </RNView>
-            <RNView style={styles.actionsRow}>
-              <RNView style={{ flex: 1 }}>
-                <Text style={{ fontWeight: '600', marginBottom: 4 }}>Category</Text>
-                <RNView style={styles.chipsRow}>
-                  {(['Groceries','Dining','Transport','Housing','Utilities','Health','Entertainment','Shopping','Education','Travel','Other'] as ExpenseCategory[]).map(c => (
-                    <Pressable key={c} onPress={() => setBillCategory(item.id, c)} style={[styles.chip, (item.category || 'Utilities') === c && styles.chipActive]}>
-                      <Text style={[styles.chipText, (item.category || 'Utilities') === c && styles.chipTextActive]}>{c}</Text>
-                    </Pressable>
-                  ))}
-                </RNView>
+            <RNView style={{ marginTop: 10 }}>
+              <Text style={{ fontWeight: '600', marginBottom: 4 }}>Category</Text>
+              <RNView style={styles.chipsRow}>
+                {(['Groceries','Dining','Transport','Housing','Utilities','Health','Entertainment','Shopping','Education','Travel','Other'] as ExpenseCategory[]).map(c => (
+                  <Pressable key={c} onPress={() => setBillCategory(item.id, c)} style={[styles.chip, (item.category || 'Utilities') === c && styles.chipActive]}>
+                    <Text style={[styles.chipText, (item.category || 'Utilities') === c && styles.chipTextActive]}>{c}</Text>
+                  </Pressable>
+                ))}
               </RNView>
+            </RNView>
+
+            <RNView style={styles.actionsRow}>
               <PaidDatePicker value={paidOnById[item.id]} onChange={(v) => setPaidOnById(prev => ({ ...prev, [item.id]: v }))} />
               <Pressable onPress={() => {
                 const v = paidOnById[item.id];
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
   billName: { fontWeight: '600', fontSize: 15 },
   billMeta: { opacity: 0.7, fontSize: 12 },
   billAmount: { fontWeight: '700', marginLeft: 12 },
-  actionsRow: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', marginTop: 10 },
+  actionsRow: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', alignItems: 'center', marginTop: 10 },
   actionBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   actionBtnText: { color: 'white', fontWeight: '600' },
 });
