@@ -44,7 +44,9 @@ export default function ExpensesScreen() {
               <Text style={styles.itemDesc}>{item.description}</Text>
               <Text style={styles.itemMeta}>{item.category} • {format(new Date(item.dateISO), 'dd MMM')}</Text>
             </View>
-            <Text style={styles.itemAmount}>€{item.amount.toFixed(2)}</Text>
+            <Text style={[styles.itemAmount, { color: item.category === 'Income' ? '#22c55e' : '#ef4444' }]}>
+              {item.category === 'Income' ? '+' : '-'}€{item.amount.toFixed(2)}
+            </Text>
             <Pressable onPress={() => removeExpense(item.id)} style={{ marginLeft: 12 }}>
               <Text style={{ color: '#ef4444' }}>Delete</Text>
             </Pressable>

@@ -80,12 +80,15 @@ export default function DashboardScreen() {
       )}
 
       {!!tips.length && (
-        <>
-          <Text style={[styles.subtitle, { marginTop: 24 }]}>Saving Tips</Text>
+        <RNView style={{ width: '100%', marginTop: 24, paddingHorizontal: 16 }}>
+          <Text style={styles.subtitle}>Saving Tips</Text>
           {tips.map((t, idx) => (
-            <Text key={idx} style={{ marginTop: 6 }}>• {t}</Text>
+            <RNView key={idx} style={{ flexDirection: 'row', marginTop: 6 }}>
+              <Text style={{ marginRight: 6 }}>•</Text>
+              <Text style={{ flex: 1 }}>{t}</Text>
+            </RNView>
           ))}
-        </>
+        </RNView>
       )}
     </View>
   );
