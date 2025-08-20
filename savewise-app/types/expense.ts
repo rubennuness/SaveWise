@@ -18,6 +18,7 @@ export interface Expense {
   category: ExpenseCategory;
   description?: string;
   dateISO: string; // e.g., 2025-08-01T12:00:00.000Z
+  sourceBillId?: string; // link to a bill if created from Bills
 }
 
 export interface ExpensesState {

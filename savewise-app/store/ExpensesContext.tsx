@@ -7,6 +7,7 @@ type ExpensesContextValue = {
   state: ExpensesState;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   removeExpense: (id: string) => void;
+  removeExpensesByBillId: (billId: string) => void;
   clearAll: () => void;
   getMonthlyTotals: (monthISO: string) => { income: number; spending: number; net: number };
   getMonthlyByCategory: (monthISO: string) => Record<string, number>;
@@ -54,6 +55,10 @@ export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setState(prev => ({ expenses: prev.expenses.filter(e => e.id !== id) }));
   }, []);
 
+  const removeExpensesByBillId = useCallback((billId: string) => {
+    setState(prev => ({ expenses: prev.expenses.filter(e => e.sourceBillId !== billId) }));
+  }, []);
+
   const clearAll = useCallback(() => {
     setState({ expenses: [] });
   }, []);
@@ -96,8 +101,8 @@ export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 
   const value = useMemo(
-    () => ({ state, addExpense, removeExpense, clearAll, getMonthlyTotals, getMonthlyByCategory }),
-    [state, addExpense, removeExpense, clearAll, getMonthlyTotals, getMonthlyByCategory]
+    () => ({ state, addExpense, removeExpense, removeExpensesByBillId, clearAll, getMonthlyTotals, getMonthlyByCategory }),
+    [state, addExpense, removeExpense, removeExpensesByBillId, clearAll, getMonthlyTotals, getMonthlyByCategory]
   );
 
   return <ExpensesContext.Provider value={value}>{children}</ExpensesContext.Provider>;

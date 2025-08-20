@@ -10,7 +10,7 @@ import { ExpenseCategory } from '@/types/expense';
 
 export default function BillsScreen() {
   const { state, addBill, removeBill, markPaidAndRoll, setBillCategory } = useBills();
-  const { addExpense } = useExpenses();
+  const { addExpense, removeExpensesByBillId } = useExpenses();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState<BillFrequency>('Monthly');
@@ -117,11 +117,11 @@ export default function BillsScreen() {
                 // Log as an actual expense so the dashboard updates in the selected category
                 const whenISO = iso ?? new Date().toISOString();
                 const mappedCategory: ExpenseCategory = (item.category as ExpenseCategory) || category || 'Other';
-                addExpense({ amount: item.amount, category: mappedCategory, description: `Bill: ${item.name}`, dateISO: whenISO });
+                addExpense({ amount: item.amount, category: mappedCategory, description: `Bill: ${item.name}`, dateISO: whenISO, sourceBillId: item.id });
               }} style={[styles.actionBtn, { backgroundColor: '#111827' }]}>
                 <Text style={styles.actionBtnText}>Paid</Text>
               </Pressable>
-              <Pressable onPress={() => removeBill(item.id)} style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}>
+              <Pressable onPress={() => { removeBill(item.id); removeExpensesByBillId(item.id); }} style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}>
                 <Text style={styles.actionBtnText}>Delete</Text>
               </Pressable>
             </RNView>
