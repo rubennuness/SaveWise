@@ -8,6 +8,7 @@ type BillsContextValue = {
   addBill: (bill: Omit<Bill, 'id'>) => void;
   removeBill: (id: string) => void;
   markPaidAndRoll: (id: string, paidOnISO?: string) => void; // advance nextDueISO by frequency from paid date
+  setBillCategory: (id: string, category?: string) => void;
   clearAll: () => void;
 };
 
@@ -68,10 +69,15 @@ export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const clearAll = useCallback(() => setState({ bills: [] }), []);
+  const setBillCategory = useCallback((id: string, category?: string) => {
+    setState(prev => ({
+      bills: prev.bills.map(b => (b.id === id ? { ...b, category } : b)),
+    }));
+  }, []);
 
   const value = useMemo(
-    () => ({ state, addBill, removeBill, markPaidAndRoll, clearAll }),
-    [state, addBill, removeBill, markPaidAndRoll, clearAll]
+    () => ({ state, addBill, removeBill, markPaidAndRoll, setBillCategory, clearAll }),
+    [state, addBill, removeBill, markPaidAndRoll, setBillCategory, clearAll]
   );
 
   return <BillsContext.Provider value={value}>{children}</BillsContext.Provider>;

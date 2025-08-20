@@ -8,6 +8,7 @@ export interface Bill {
   frequency: BillFrequency;
   nextDueISO: string; // next due date in ISO
   autoPay?: boolean;
+  category?: string; // maps to expense category for analytics
 }
 
 export interface BillsState {

@@ -5,21 +5,25 @@ import { useMemo, useState } from 'react';
 import { BillFrequency } from '@/types/bill';
 import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useExpenses } from '@/store/ExpensesContext';
+import { ExpenseCategory } from '@/types/expense';
 
 export default function BillsScreen() {
-  const { state, addBill, removeBill, markPaidAndRoll } = useBills();
+  const { state, addBill, removeBill, markPaidAndRoll, setBillCategory } = useBills();
+  const { addExpense } = useExpenses();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState<BillFrequency>('Monthly');
   const [nextDue, setNextDue] = useState(''); // YYYY-MM-DD
   const [showNextDuePicker, setShowNextDuePicker] = useState(false);
   const [paidOnById, setPaidOnById] = useState<Record<string, string>>({}); // billId -> YYYY-MM-DD
+  const [category, setCategory] = useState<ExpenseCategory>('Utilities');
 
   const add = () => {
     const n = parseFloat(amount.replace(',', '.'));
     if (!name || isNaN(n) || n <= 0) return;
     const base = nextDue ? new Date(nextDue) : new Date();
-    addBill({ name, amount: n, frequency, nextDueISO: base.toISOString() });
+    addBill({ name, amount: n, frequency, nextDueISO: base.toISOString(), category });
     setName('');
     setAmount('');
     setNextDue('');
@@ -62,6 +66,15 @@ export default function BillsScreen() {
         ))}
       </RNView>
 
+      <Text style={{ marginTop: 8, fontWeight: '600' }}>Category</Text>
+      <RNView style={styles.chipsRow}>
+        {(['Groceries','Dining','Transport','Housing','Utilities','Health','Entertainment','Shopping','Education','Travel','Other'] as ExpenseCategory[]).map(c => (
+          <Pressable key={c} onPress={() => setCategory(c)} style={[styles.chip, category === c && styles.chipActive]}>
+            <Text style={[styles.chipText, category === c && styles.chipTextActive]}>{c}</Text>
+          </Pressable>
+        ))}
+      </RNView>
+
       <FlatList
         style={{ marginTop: 16 }}
         data={state.bills}
@@ -76,11 +89,25 @@ export default function BillsScreen() {
               <Text style={styles.billAmount}>€{item.amount.toFixed(2)}</Text>
             </RNView>
             <RNView style={styles.actionsRow}>
+              <RNView style={{ flex: 1 }}>
+                <Text style={{ fontWeight: '600', marginBottom: 4 }}>Category</Text>
+                <RNView style={styles.chipsRow}>
+                  {(['Groceries','Dining','Transport','Housing','Utilities','Health','Entertainment','Shopping','Education','Travel','Other'] as ExpenseCategory[]).map(c => (
+                    <Pressable key={c} onPress={() => setBillCategory(item.id, c)} style={[styles.chip, (item.category || 'Utilities') === c && styles.chipActive]}>
+                      <Text style={[styles.chipText, (item.category || 'Utilities') === c && styles.chipTextActive]}>{c}</Text>
+                    </Pressable>
+                  ))}
+                </RNView>
+              </RNView>
               <PaidDatePicker value={paidOnById[item.id]} onChange={(v) => setPaidOnById(prev => ({ ...prev, [item.id]: v }))} />
               <Pressable onPress={() => {
                 const v = paidOnById[item.id];
                 const iso = v ? new Date(v).toISOString() : undefined;
                 markPaidAndRoll(item.id, iso);
+                // Log as an actual expense so the dashboard updates in the selected category
+                const whenISO = iso ?? new Date().toISOString();
+                const mappedCategory: ExpenseCategory = (item.category as ExpenseCategory) || category || 'Other';
+                addExpense({ amount: item.amount, category: mappedCategory, description: `Bill: ${item.name}`, dateISO: whenISO });
               }} style={[styles.actionBtn, { backgroundColor: '#111827' }]}>
                 <Text style={styles.actionBtnText}>Paid</Text>
               </Pressable>
