@@ -1,24 +1,28 @@
-import { StyleSheet, FlatList, TextInput, Pressable, View as RNView } from 'react-native';
+import { StyleSheet, FlatList, TextInput, Pressable, View as RNView, Platform } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useBills } from '@/store/BillsContext';
 import { useMemo, useState } from 'react';
 import { BillFrequency } from '@/types/bill';
 import { format } from 'date-fns';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function BillsScreen() {
   const { state, addBill, removeBill, markPaidAndRoll } = useBills();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState<BillFrequency>('Monthly');
+  const [nextDue, setNextDue] = useState(''); // YYYY-MM-DD
+  const [showNextDuePicker, setShowNextDuePicker] = useState(false);
   const [paidOnById, setPaidOnById] = useState<Record<string, string>>({}); // billId -> YYYY-MM-DD
 
   const add = () => {
     const n = parseFloat(amount.replace(',', '.'));
     if (!name || isNaN(n) || n <= 0) return;
-    const next = new Date();
-    addBill({ name, amount: n, frequency, nextDueISO: next.toISOString() });
+    const base = nextDue ? new Date(nextDue) : new Date();
+    addBill({ name, amount: n, frequency, nextDueISO: base.toISOString() });
     setName('');
     setAmount('');
+    setNextDue('');
   };
 
   return (
@@ -28,7 +32,34 @@ export default function BillsScreen() {
       <RNView style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
         <TextInput style={[styles.input, { flex: 1 }]} value={name} onChangeText={setName} placeholder="Bill name" />
         <TextInput style={[styles.input, { width: 100 }]} value={amount} onChangeText={setAmount} placeholder="0.00" keyboardType="decimal-pad" />
+        <Pressable style={[styles.input, styles.dateBtn]} onPress={() => setShowNextDuePicker(true)}>
+          <Text style={{ color: nextDue ? '#111827' : 'rgba(0,0,0,0.4)' }}>{nextDue || 'Pick next due date'}</Text>
+        </Pressable>
         <Pressable style={styles.addBtn} onPress={add}><Text style={styles.addBtnText}>Add</Text></Pressable>
+      </RNView>
+      {showNextDuePicker && (
+        <DateTimePicker
+          value={nextDue ? new Date(nextDue) : new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          onChange={(_, date) => {
+            setShowNextDuePicker(false);
+            if (date) {
+              const y = date.getFullYear();
+              const m = String(date.getMonth() + 1).padStart(2, '0');
+              const d = String(date.getDate()).padStart(2, '0');
+              setNextDue(`${y}-${m}-${d}`);
+            }
+          }}
+        />
+      )}
+
+      <RNView style={styles.chipsRow}>
+        {(['Weekly','Monthly','Quarterly','Yearly'] as BillFrequency[]).map(f => (
+          <Pressable key={f} onPress={() => setFrequency(f)} style={[styles.chip, frequency === f && styles.chipActive]}>
+            <Text style={[styles.chipText, frequency === f && styles.chipTextActive]}>{f}</Text>
+          </Pressable>
+        ))}
       </RNView>
 
       <FlatList
@@ -45,12 +76,7 @@ export default function BillsScreen() {
               <Text style={styles.billAmount}>€{item.amount.toFixed(2)}</Text>
             </RNView>
             <RNView style={styles.actionsRow}>
-              <TextInput
-                style={[styles.input, { flex: 1, minWidth: 140 }]}
-                value={paidOnById[item.id] ?? ''}
-                onChangeText={(v) => setPaidOnById(prev => ({ ...prev, [item.id]: v }))}
-                placeholder="Paid on YYYY-MM-DD"
-              />
+              <PaidDatePicker value={paidOnById[item.id]} onChange={(v) => setPaidOnById(prev => ({ ...prev, [item.id]: v }))} />
               <Pressable onPress={() => {
                 const v = paidOnById[item.id];
                 const iso = v ? new Date(v).toISOString() : undefined;
@@ -81,6 +107,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: 'rgba(0,0,0,0.04)'
   },
+  dateBtn: {
+    justifyContent: 'center',
+    width: 160,
+  },
   addBtn: {
     height: 40,
     borderRadius: 8,
@@ -90,6 +120,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#111827',
   },
   addBtnText: { color: 'white', fontWeight: '600' },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  chip: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: 'rgba(0,0,0,0.06)' },
+  chipActive: { backgroundColor: '#111827' },
+  chipText: { fontSize: 12 },
+  chipTextActive: { color: 'white' },
   billCard: { padding: 12, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(0,0,0,0.08)', backgroundColor: 'rgba(0,0,0,0.02)' },
   billHeader: { flexDirection: 'row', alignItems: 'center' },
   billName: { fontWeight: '600', fontSize: 15 },
@@ -99,5 +134,32 @@ const styles = StyleSheet.create({
   actionBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   actionBtnText: { color: 'white', fontWeight: '600' },
 });
+
+function PaidDatePicker({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
+  const [show, setShow] = useState(false);
+  return (
+    <>
+      <Pressable style={[styles.input, styles.dateBtn, { minWidth: 160 }]} onPress={() => setShow(true)}>
+        <Text style={{ color: value ? '#111827' : 'rgba(0,0,0,0.4)' }}>{value || 'Paid on date'}</Text>
+      </Pressable>
+      {show && (
+        <DateTimePicker
+          value={value ? new Date(value) : new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          onChange={(_, date) => {
+            setShow(false);
+            if (date) {
+              const y = date.getFullYear();
+              const m = String(date.getMonth() + 1).padStart(2, '0');
+              const d = String(date.getDate()).padStart(2, '0');
+              onChange(`${y}-${m}-${d}`);
+            }
+          }}
+        />
+      )}
+    </>
+  );
+}
 
 
