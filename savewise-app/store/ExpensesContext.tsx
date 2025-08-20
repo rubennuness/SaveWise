@@ -1,13 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addMonths, endOfMonth, formatISO, isWithinInterval, parseISO, startOfMonth } from 'date-fns';
-import { Expense, ExpensesState } from '@/types/expense';
+import { Expense, ExpensesState, ExpenseCategory } from '@/types/expense';
 
 type ExpensesContextValue = {
   state: ExpensesState;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   removeExpense: (id: string) => void;
   removeExpensesByBillId: (billId: string) => void;
+  updateExpensesCategoryByBillId: (billId: string, category: ExpenseCategory) => void;
   clearAll: () => void;
   getMonthlyTotals: (monthISO: string) => { income: number; spending: number; net: number };
   getMonthlyByCategory: (monthISO: string) => Record<string, number>;
@@ -59,6 +60,12 @@ export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setState(prev => ({ expenses: prev.expenses.filter(e => e.sourceBillId !== billId) }));
   }, []);
 
+  const updateExpensesCategoryByBillId = useCallback((billId: string, category: ExpenseCategory) => {
+    setState(prev => ({
+      expenses: prev.expenses.map(e => (e.sourceBillId === billId ? { ...e, category } : e)),
+    }));
+  }, []);
+
   const clearAll = useCallback(() => {
     setState({ expenses: [] });
   }, []);
@@ -101,8 +108,8 @@ export const ExpensesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 
   const value = useMemo(
-    () => ({ state, addExpense, removeExpense, removeExpensesByBillId, clearAll, getMonthlyTotals, getMonthlyByCategory }),
-    [state, addExpense, removeExpense, removeExpensesByBillId, clearAll, getMonthlyTotals, getMonthlyByCategory]
+    () => ({ state, addExpense, removeExpense, removeExpensesByBillId, updateExpensesCategoryByBillId, clearAll, getMonthlyTotals, getMonthlyByCategory }),
+    [state, addExpense, removeExpense, removeExpensesByBillId, updateExpensesCategoryByBillId, clearAll, getMonthlyTotals, getMonthlyByCategory]
   );
 
   return <ExpensesContext.Provider value={value}>{children}</ExpensesContext.Provider>;

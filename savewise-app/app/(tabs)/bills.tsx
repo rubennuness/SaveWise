@@ -10,7 +10,7 @@ import { ExpenseCategory } from '@/types/expense';
 
 export default function BillsScreen() {
   const { state, addBill, removeBill, markPaidAndRoll, setBillCategory } = useBills();
-  const { addExpense, removeExpensesByBillId } = useExpenses();
+  const { addExpense, removeExpensesByBillId, updateExpensesCategoryByBillId } = useExpenses();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState<BillFrequency>('Monthly');
@@ -93,7 +93,7 @@ export default function BillsScreen() {
               {editingCategoryBillId === item.id ? (
                 <RNView style={styles.chipsRow}>
                   {(['Groceries','Dining','Transport','Housing','Utilities','Health','Entertainment','Shopping','Education','Travel','Other'] as ExpenseCategory[]).map(c => (
-                    <Pressable key={c} onPress={() => { setBillCategory(item.id, c); setEditingCategoryBillId(null); }} style={[styles.chip, (item.category || 'Utilities') === c && styles.chipActive]}>
+                    <Pressable key={c} onPress={() => { setBillCategory(item.id, c); updateExpensesCategoryByBillId(item.id, c); setEditingCategoryBillId(null); }} style={[styles.chip, (item.category || 'Utilities') === c && styles.chipActive]}>
                       <Text style={[styles.chipText, (item.category || 'Utilities') === c && styles.chipTextActive]}>{c}</Text>
                     </Pressable>
                   ))}
