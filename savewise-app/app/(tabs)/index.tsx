@@ -1,15 +1,16 @@
 import { StyleSheet, View as RNView } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useMemo } from 'react';
-import { format, startOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import { useExpenses } from '@/store/ExpensesContext';
 import { useBudget } from '@/store/BudgetContext';
-// Bills are not used for tips anymore
+import { useBills } from '@/store/BillsContext';
 import Svg, { G, Path } from 'react-native-svg';
 
 export default function DashboardScreen() {
-  const { getMonthlyTotals, getMonthlyByCategory } = useExpenses();
+  const { getMonthlyTotals, getMonthlyByCategory, state: expensesState } = useExpenses();
   const { state: budget } = useBudget();
+  const { state: billsState } = useBills();
   const monthISO = useMemo(() => startOfMonth(new Date()).toISOString(), []);
   const totals = getMonthlyTotals(monthISO);
   const byCat = getMonthlyByCategory(monthISO);
@@ -21,6 +22,49 @@ export default function DashboardScreen() {
   const totalSpending = useMemo(() => categories.reduce((sum, [, v]) => sum + v, 0), [categories]);
   const donutData = categories.slice(0, 6);
   const donutColors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+  // Year-end projection based on rolling 3-month average
+  const projection = useMemo(() => {
+    const now = new Date();
+    const startThis = startOfMonth(now);
+    const endThis = endOfMonth(now);
+    const msMonth = endThis.getTime() - startThis.getTime();
+    const msElapsed = Math.max(0, Math.min(msMonth, now.getTime() - startThis.getTime()));
+    const fractionElapsed = msMonth ? msElapsed / msMonth : 1;
+
+    let incomeSum = 0;
+    let discSum = 0;
+    let months = 0;
+    for (let i = 0; i < 3; i++) {
+      const s = startOfMonth(addMonths(now, -i));
+      const e = endOfMonth(s);
+      months++;
+      for (const exp of expensesState.expenses) {
+        const d = new Date(exp.dateISO);
+        if (d >= s && d <= e) {
+          if (exp.category === 'Income') incomeSum += exp.amount;
+          else if (!exp.sourceBillId) discSum += exp.amount; // discretionary only
+        }
+      }
+    }
+    const avgIncome = incomeSum / (months || 1);
+    const avgDisc = discSum / (months || 1);
+
+    let billsMonthly = 0;
+    for (const b of billsState.bills) {
+      switch (b.frequency) {
+        case 'Weekly': billsMonthly += (b.amount * 52) / 12; break;
+        case 'Monthly': billsMonthly += b.amount; break;
+        case 'Quarterly': billsMonthly += b.amount / 3; break;
+        case 'Yearly': billsMonthly += b.amount / 12; break;
+      }
+    }
+
+    const monthlyNet = avgIncome - (avgDisc + billsMonthly);
+    const monthsRemaining = 12 - (now.getMonth() + 1) + (1 - fractionElapsed);
+    const yearEndDelta = monthlyNet * monthsRemaining;
+    return { monthlyNet, monthsRemaining, yearEndDelta };
+  }, [expensesState.expenses, billsState.bills]);
 
   // simple saving tips based on budget vs actuals and upcoming bills
   const tips: string[] = [];
@@ -74,6 +118,10 @@ export default function DashboardScreen() {
               </RNView>
             );
           })}
+          <RNView style={{ marginTop: 8 }}>
+            <Text style={{ opacity: 0.7 }}>Projected year-end savings if you keep this pace:</Text>
+            <Text style={{ fontWeight: '700' }}>€{projection.yearEndDelta.toFixed(2)}</Text>
+          </RNView>
         </RNView>
       )}
 
