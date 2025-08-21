@@ -1,38 +1,10 @@
-import { StyleSheet, Image, Pressable, TextInput } from 'react-native';
+import { StyleSheet, Image, Pressable } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Link, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
 import { useEffect } from 'react';
-
-WebBrowser.maybeCompleteAuthSession();
-
-const discovery = {
-  authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-  tokenEndpoint: 'https://oauth2.googleapis.com/token',
-};
 
 export default function Welcome() {
   const router = useRouter();
-  const clientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '';
-  const redirectUri = AuthSession.makeRedirectUri();
-
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId,
-      redirectUri,
-      scopes: ['profile', 'email'],
-      responseType: AuthSession.ResponseType.Token,
-    },
-    discovery
-  );
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      // You would verify the token and create a session here
-      router.replace('/(tabs)');
-    }
-  }, [response]);
 
   return (
     <View style={styles.container}>
@@ -44,11 +16,11 @@ export default function Welcome() {
       </View>
 
       <View style={{ marginTop: 24 }}>
-        <Pressable disabled={!request} style={styles.cta} onPress={() => promptAsync()}>
-          <Text>Continue with Google</Text>
-        </Pressable>
         <Pressable style={styles.cta} onPress={() => router.replace('/(tabs)')}>
           <Text>Continue with Email</Text>
+        </Pressable>
+        <Pressable style={styles.cta} onPress={() => router.push('/(auth)/register')}>
+          <Text>Create account</Text>
         </Pressable>
       </View>
 
