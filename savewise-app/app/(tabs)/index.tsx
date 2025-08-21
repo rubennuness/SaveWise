@@ -8,6 +8,7 @@ import { useBills } from '@/store/BillsContext';
 import Svg, { G, Path } from 'react-native-svg';
 import * as Notifications from 'expo-notifications';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import ChatBotFab from '@/components/ChatBot';
 
 export default function DashboardScreen() {
   const { getMonthlyTotals, getMonthlyByCategory, state: expensesState } = useExpenses();
@@ -181,6 +182,8 @@ export default function DashboardScreen() {
           </RNView>
         </RNView>
       </Modal>
+
+      <ChatBotFab />
     </View>
   );
 }
@@ -223,10 +226,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+  title: { fontSize: 20, fontWeight: 'bold' },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   row: {
     flexDirection: 'row',
