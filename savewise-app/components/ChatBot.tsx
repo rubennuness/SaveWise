@@ -4,6 +4,7 @@ import { Text, View } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useExpenses } from '@/store/ExpensesContext';
 import { startOfMonth } from 'date-fns';
+import Constants from 'expo-constants';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -48,7 +49,7 @@ function ChatBotModal({ onClose }: { onClose: () => void }) {
     setMessages(prev => [...prev, userMsg]);
     setSending(true);
     try {
-      const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+      const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY || (Constants.expoConfig?.extra as any)?.openaiKey;
       if (!apiKey) {
         setMessages(prev => [...prev, { id: userMsg.id + '-err', role: 'assistant', content: 'API key not set. Add EXPO_PUBLIC_OPENAI_API_KEY to use the assistant.' }]);
       } else {
@@ -67,6 +68,11 @@ function ChatBotModal({ onClose }: { onClose: () => void }) {
           }),
         });
         const json = await res.json();
+        if (!res.ok) {
+          const err = json?.error?.message || `HTTP ${res.status}`;
+          setMessages(prev => [...prev, { id: userMsg.id + '-err3', role: 'assistant', content: `Error: ${err}` }]);
+          return;
+        }
         const text = json?.choices?.[0]?.message?.content?.trim() || 'Sorry, I could not generate a response.';
         setMessages(prev => [...prev, { id: userMsg.id + '-ai', role: 'assistant', content: text }]);
       }

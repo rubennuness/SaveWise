@@ -59,6 +59,7 @@ function RootLayoutNav() {
         <BudgetProvider>
           <BillsProvider>
             <Stack>
+              <Stack.Screen name="(auth)/welcome" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
             </Stack>

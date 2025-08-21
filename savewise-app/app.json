@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "savewiseapp",
+    "owner": "anonymous",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -32,10 +33,20 @@
       "expo-router",
       ["expo-notifications"],
       ["expo-background-fetch"],
-      ["expo-task-manager"]
+      ["expo-task-manager"],
+      [
+        "expo-auth-session",
+        {
+          "androidExpoProxy": true,
+          "iosExpoProxy": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "openaiKey": "${EXPO_PUBLIC_OPENAI_API_KEY}"
     }
   }
 }
