@@ -1,18 +1,21 @@
-import { StyleSheet, View as RNView } from 'react-native';
+import { StyleSheet, View as RNView, Pressable, Modal } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import { useExpenses } from '@/store/ExpensesContext';
 import { useBudget } from '@/store/BudgetContext';
 import { useBills } from '@/store/BillsContext';
 import Svg, { G, Path } from 'react-native-svg';
 import * as Notifications from 'expo-notifications';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function DashboardScreen() {
   const { getMonthlyTotals, getMonthlyByCategory, state: expensesState } = useExpenses();
   const { state: budget } = useBudget();
   const { state: billsState } = useBills();
-  const monthISO = useMemo(() => startOfMonth(new Date()).toISOString(), []);
+  const [monthDate, setMonthDate] = useState<Date>(startOfMonth(new Date()));
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const monthISO = useMemo(() => startOfMonth(monthDate).toISOString(), [monthDate]);
   const totals = getMonthlyTotals(monthISO);
   const byCat = getMonthlyByCategory(monthISO);
 
@@ -102,7 +105,10 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>This Month ({format(new Date(monthISO), 'MMM yyyy')})</Text>
+      <Pressable onPress={() => setShowMonthPicker(true)} style={styles.titleRow}>
+        <Text style={styles.title}>{format(new Date(monthISO), 'MMMM yyyy')} Spendings</Text>
+        <FontAwesome name="chevron-down" size={16} style={{ marginLeft: 8, opacity: 0.7 }} />
+      </Pressable>
       <View style={styles.row}>
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Income</Text>
@@ -156,6 +162,25 @@ export default function DashboardScreen() {
           ))}
         </RNView>
       )}
+
+      <Modal visible={showMonthPicker} transparent animationType="fade" onRequestClose={() => setShowMonthPicker(false)}>
+        <RNView style={styles.modalBackdrop}>
+          <RNView style={styles.modalCard}>
+            <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Pressable onPress={() => setMonthDate(d => startOfMonth(addMonths(d, -1)))}>
+                <FontAwesome name="chevron-left" size={20} />
+              </Pressable>
+              <Text style={{ fontWeight: '700' }}>{format(monthDate, 'MMMM yyyy')}</Text>
+              <Pressable onPress={() => setMonthDate(d => startOfMonth(addMonths(d, 1)))}>
+                <FontAwesome name="chevron-right" size={20} />
+              </Pressable>
+            </RNView>
+            <Pressable onPress={() => setShowMonthPicker(false)} style={styles.dismissBtn}>
+              <Text style={{ color: 'white', fontWeight: '600' }}>Done</Text>
+            </Pressable>
+          </RNView>
+        </RNView>
+      </Modal>
     </View>
   );
 }
@@ -202,6 +227,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
   row: {
     flexDirection: 'row',
     gap: 12,
@@ -242,4 +268,7 @@ const styles = StyleSheet.create({
   legendValue: {
     fontWeight: '600',
   },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
+  modalCard: { width: '80%', borderRadius: 12, backgroundColor: 'white', padding: 16 },
+  dismissBtn: { marginTop: 12, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111827' },
 });
