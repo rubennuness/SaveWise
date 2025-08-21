@@ -10,6 +10,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { ExpensesProvider } from '@/store/ExpensesContext';
 import { BudgetProvider } from '@/store/BudgetContext';
 import { BillsProvider } from '@/store/BillsContext';
+import { registerNetMonitor } from '@/background/netMonitor';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -38,6 +39,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
+      registerNetMonitor().catch(() => {});
     }
   }, [loaded]);
 

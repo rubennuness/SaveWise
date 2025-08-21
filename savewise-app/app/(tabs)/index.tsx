@@ -1,11 +1,12 @@
 import { StyleSheet, View as RNView } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import { useExpenses } from '@/store/ExpensesContext';
 import { useBudget } from '@/store/BudgetContext';
 import { useBills } from '@/store/BillsContext';
 import Svg, { G, Path } from 'react-native-svg';
+import * as Notifications from 'expo-notifications';
 
 export default function DashboardScreen() {
   const { getMonthlyTotals, getMonthlyByCategory, state: expensesState } = useExpenses();
@@ -65,6 +66,25 @@ export default function DashboardScreen() {
     const yearEndDelta = monthlyNet * monthsRemaining;
     return { monthlyNet, monthsRemaining, yearEndDelta };
   }, [expensesState.expenses, billsState.bills]);
+
+  // Notify when monthly net approaches 0 (threshold 5% of income)
+  useEffect(() => {
+    const threshold = totals.income * 0.05;
+    const net = totals.income - totals.spending;
+    if (totals.income > 0 && net <= threshold) {
+      Notifications.requestPermissionsAsync().then(({ status }) => {
+        if (status === 'granted') {
+          Notifications.scheduleNotificationAsync({
+            content: {
+              title: 'Heads up',
+              body: `You have €${net.toFixed(2)} left this month. Consider pausing discretionary spending.`,
+            },
+            trigger: null,
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+  }, [totals.income, totals.spending]);
 
   // simple saving tips based on budget vs actuals and upcoming bills
   const tips: string[] = [];
