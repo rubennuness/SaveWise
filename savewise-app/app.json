@@ -34,13 +34,7 @@
       ["expo-notifications"],
       ["expo-background-fetch"],
       ["expo-task-manager"],
-      [
-        "expo-auth-session",
-        {
-          "androidExpoProxy": true,
-          "iosExpoProxy": true
-        }
-      ]
+      
     ],
     "experiments": {
       "typedRoutes": true
